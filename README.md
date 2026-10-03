@@ -32,6 +32,7 @@ Endpoints:
 - `GET /health`: verificação da API.
 - `GET /api/v1/demo/portfolio`: composição demonstrativa.
 - `GET /api/v1/demo/risk`: métricas, correlação e curva de patrimônio normalizada (inicial = 1).
+- `POST /api/v1/demo/simulate`: compara os pesos enviados com a carteira original, no mesmo histórico. Pesos inválidos retornam HTTP 422.
 
 Testes:
 
@@ -67,6 +68,28 @@ npm run build
 npm start
 ```
 
+## Simulação de alocação
+
+No dashboard, abra **Simular alocação**, informe os pesos em porcentagem e clique em **Comparar cenário**. Todos os pesos devem estar entre 0 e 100% e somar 100%; zero é permitido. O cenário não é salvo nem altera a carteira original.
+
+O resultado compara retorno, volatilidade, drawdown, VaR, ES e HHI. As diferenças percentuais são exibidas em **pontos percentuais**, como cenário menos atual. Não há otimização automática nem previsão de retorno: é um cálculo retrospectivo sobre dados sintéticos, com os mesmos pressupostos da análise original. A exportação JSON do dashboard permanece relativa à carteira original.
+
+Exemplo de payload da API (pesos em **frações**, não em porcentagens):
+
+```json
+{
+  "weights": {
+    "PETR4": 0.4,
+    "VALE3": 0.1,
+    "ITUB4": 0.2,
+    "WEGE3": 0.1,
+    "BOVA11": 0.2
+  }
+}
+```
+
+A resposta inclui `current`, `scenario`, `metric_deltas`, `data_source` e `notice`. O navegador chama o proxy Next.js `POST /api/simulate`; o endereço do backend não é exposto como configuração pública. Em caso de indisponibilidade, o proxy retorna HTTP 503.
+
 ## Convenções financeiras
 
 - Carteira comprada, sem alavancagem, pesos somando 100%, moeda-base BRL.
@@ -89,8 +112,11 @@ backend/
     api.py       # Endpoints
     demo.py      # Ativos e séries sintéticas
     risk.py      # Motor independente da API
+    simulation.py # Comparação de cenários
   tests/
     test_risk.py
+    test_simulation.py
+    test_simulation_api.py
 frontend/
   src/app/              # Página, estilos e estados de carregamento/erro
   src/components/       # Dashboard e gráfico Recharts
@@ -102,4 +128,4 @@ frontend/
 
 1. Importação de posições e integração com fonte real de preços ajustados.
 2. Persistência em PostgreSQL e rastreabilidade de análises.
-3. Simulação de pesos e otimização de mínima variância com limites de concentração.
+3. Otimização de mínima variância com limites de concentração.
