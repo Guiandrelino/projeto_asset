@@ -90,6 +90,22 @@ Exemplo de payload da API (pesos em **frações**, não em porcentagens):
 
 A resposta inclui `current`, `scenario`, `metric_deltas`, `data_source` e `notice`. O navegador chama o proxy Next.js `POST /api/simulate`; o endereço do backend não é exposto como configuração pública. Em caso de indisponibilidade, o proxy retorna HTTP 503.
 
+## Otimização de mínima variância
+
+Em **Otimizar carteira**, defina o peso máximo por instrumento (padrão: 40%). Para cinco ativos, o mínimo viável é 20%, que força pesos iguais. A carteira permanece comprada, com soma de pesos igual a 100%.
+
+O motor usa SciPy/SLSQP para minimizar `wᵀΣw`, com covariância amostral anualizada por 252. Verifica convergência, soma, limites e objetivo antes de retornar. O resultado compara os pesos e as métricas com a carteira original e pode ser exportado em JSON, sem arredondamento dos pesos calculados.
+
+Endpoint: `POST /api/v1/demo/optimize`, com payload `{"max_weight": 0.4}` (fração). `{}` usa o limite padrão. A resposta inclui `optimization`, `current`, `scenario`, `metric_deltas`, `data_source` e `notice`. Solicitações inválidas/inviáveis retornam 422; falha do solver retorna 503. O navegador usa o proxy `POST /api/optimize`.
+
+**Limitações:** otimização in-sample no próprio histórico sintético, sem avaliação fora da amostra, regularização da covariância, custos, restrições setoriais ou decomposição do ETF. Minimiza variância, não maximiza retorno nem minimiza necessariamente VaR ou drawdown. Se a carteira original não respeitar o limite escolhido, a solução restrita pode ter maior volatilidade que ela. Não modifica a carteira original nem constitui recomendação de investimento.
+
+Se a API já estava rodando antes desta atualização, reinicie-a após instalar as novas dependências:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".\backend[dev]"
+```
+
 ## Convenções financeiras
 
 - Carteira comprada, sem alavancagem, pesos somando 100%, moeda-base BRL.
@@ -113,10 +129,13 @@ backend/
     demo.py      # Ativos e séries sintéticas
     risk.py      # Motor independente da API
     simulation.py # Comparação de cenários
+    optimization.py # Mínima variância com limites
   tests/
     test_risk.py
     test_simulation.py
     test_simulation_api.py
+    test_optimization.py
+    test_optimization_api.py
 frontend/
   src/app/              # Página, estilos e estados de carregamento/erro
   src/components/       # Dashboard e gráfico Recharts
@@ -128,4 +147,4 @@ frontend/
 
 1. Importação de posições e integração com fonte real de preços ajustados.
 2. Persistência em PostgreSQL e rastreabilidade de análises.
-3. Otimização de mínima variância com limites de concentração.
+3. Validação fora da amostra, limites setoriais e modelos de covariância mais robustos.
