@@ -6,6 +6,7 @@ import { Activity, ArrowUpRight, BarChart3, ChevronRight, Database, Download, Gl
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { Portfolio, Risk } from "@/lib/types";
 import AllocationSimulator from "@/components/allocation-simulator";
+import AllocationOptimizer from "@/components/allocation-optimizer";
 
 const colors = ["#5ee0b0", "#65aaf5", "#a38df2", "#edbf74", "#e58fa4"];
 const percent = (value: number) => new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(value);
@@ -44,6 +45,7 @@ export default function Dashboard({ portfolio, risk }: { portfolio: Portfolio; r
         <a href="#composition"><Layers size={18} />Carteira</a>
         <a href="#correlation"><ShieldCheck size={18} />Análise de risco</a>
         <a href="#simulation"><Activity size={18} />Simular alocação</a>
+        <a href="#optimization"><BarChart3 size={18} />Otimizar carteira</a>
         <a href="#methodology"><Database size={18} />Dados e metodologia</a>
       </nav>
       <div className="sidebar-bottom"><span className="status-dot" />Dados sintéticos<small>Motor de risco · v0.1</small></div>
@@ -67,6 +69,7 @@ export default function Dashboard({ portfolio, risk }: { portfolio: Portfolio; r
         <div className="bottom-grid"><section className="panel" id="correlation"><div className="panel-heading"><div><h2>Matriz de correlação</h2><p>Retornos diários · correlação de Pearson</p></div></div><div className="table-scroll correlation-wrap"><table className="correlation-table"><thead><tr><th scope="col"><span className="sr-only">Ativo</span></th>{tickers.map(ticker => <th scope="col" key={ticker}>{ticker}</th>)}</tr></thead><tbody>{tickers.map(row => <tr key={row}><th scope="row">{row}</th>{tickers.map(col => { const value = risk.correlation[col]?.[row] ?? null; return <td key={col} style={{ background: value === null ? "transparent" : value >= 0 ? `rgba(94,224,176,${0.06 + Math.abs(value) * 0.28})` : `rgba(101,170,245,${0.06 + Math.abs(value) * 0.28})` }}>{value === null ? "—" : value.toFixed(2).replace(".", ",")}</td>; })}</tr>)}</tbody></table></div><div className="panel-footer">−1: relação inversa · 0: sem relação linear · +1: mesma direção</div></section>
           <section className="panel methodology" id="methodology"><div className="panel-heading"><div><h2>Premissas da análise</h2><p>Transparência antes da decisão</p></div><ShieldCheck size={19} className="muted" /></div><dl><div><dt>Origem dos dados</dt><dd>Sintéticos · seed fixa</dd></div><div><dt>Estratégia</dt><dd>Pesos fixos diários</dd></div><div><dt>Custos e impostos</dt><dd>Não incluídos</dd></div><div><dt>Calendário</dt><dd>Dias úteis genéricos</dd></div><div><dt>Horizonte VaR / ES</dt><dd>{risk.assumptions.risk_horizon_days} dia · {percent(risk.assumptions.confidence)}</dd></div></dl><p className="method-note">O calendário não reproduz os pregões da B3. As métricas não capturam todos os riscos, como liquidez, e não garantem resultados futuros.</p></section></div>
         <AllocationSimulator portfolio={portfolio} />
+        <AllocationOptimizer portfolio={portfolio} />
         <footer className="page-footer"><span>Asset Intelligence Platform</span><span>Ambiente demonstrativo · sem dados de mercado reais</span></footer>
       </main>
     </div>

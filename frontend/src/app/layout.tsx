@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./optimizer.css";
 
 export const metadata: Metadata = {
   title: "Asset Intelligence | Carteira Brasil",
